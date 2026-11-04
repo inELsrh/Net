@@ -3,673 +3,413 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>資訊網路題庫自我評量系統</title>
+    <title>Linux 伺服器與網路管理線上測驗</title>
     <style>
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background-color: #f4f6f9;
+            font-family: Arial, sans-serif;
+            background-color: #f4f7f6;
             color: #333;
             margin: 0;
-            padding: 15px;
+            padding: 20px;
         }
         .container {
             max-width: 800px;
             margin: 0 auto;
             background: #fff;
-            padding: 20px;
-            border-radius: 10px;
+            padding: 30px;
+            border-radius: 8px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
-        h1 {
+        h1, h2 {
             text-align: center;
             color: #2c3e50;
-            font-size: 1.5rem;
         }
-        .question-card {
-            border-bottom: 1px solid #eee;
-            padding: 15px 0;
+        .nav-tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #ddd;
+        }
+        .nav-tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            background: #e0e0e0;
+            border: none;
+            font-size: 16px;
+            font-weight: bold;
+            outline: none;
+            transition: 0.3px;
+        }
+        .nav-tab.active {
+            background: #3498db;
+            color: white;
+            border-bottom: 2px solid #2980b9;
+        }
+        .section {
+            display: none;
+        }
+        .section.active {
+            display: block;
+        }
+        .question {
+            margin-bottom: 25px;
+            padding: 15px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            background: #fafafa;
+        }
+        .question.incorrect {
+            border-color: #e74c3c;
+            background: #fdf2f2;
+        }
+        .question.correct {
+            border-color: #2ecc71;
+            background: #f2f9f4;
         }
         .question-title {
             font-weight: bold;
             margin-bottom: 10px;
-            font-size: 1rem;
         }
         .options label {
             display: block;
             margin: 8px 0;
             cursor: pointer;
-            padding: 8px;
-            border-radius: 5px;
-            background: #f8f9fa;
-            transition: background 0.2s;
         }
-        .options label:hover {
-            background: #e9ecef;
+        .feedback {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 14px;
         }
-        input[type="text"] {
-            width: 100%;
-            padding: 8px;
-            box-sizing: border-box;
+        .feedback.correct-msg {
+            background: #d4edda;
+            color: #155724;
+        }
+        .feedback.incorrect-msg {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .explanation {
             margin-top: 5px;
-            border: 1px solid #ccc;
+            font-size: 13px;
+            color: #555;
+            background: #fff3cd;
+            padding: 8px;
             border-radius: 4px;
         }
-        .submit-btn {
+        .btn {
             display: block;
             width: 100%;
             padding: 12px;
-            background: #007bff;
+            background: #3498db;
             color: white;
             border: none;
-            font-size: 1.1rem;
+            font-size: 16px;
+            font-weight: bold;
             border-radius: 5px;
             cursor: pointer;
+            text-align: center;
             margin-top: 20px;
         }
-        .submit-btn:hover {
-            background: #0056b3;
+        .btn:hover {
+            background: #2980b9;
         }
-        .result-box {
-            margin-top: 20px;
-            padding: 15px;
-            background: #e2f0d9;
-            border-radius: 5px;
-            display: none;
+        #score-panel {
+            font-size: 20px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 20px;
+            color: #2c3e50;
         }
-        .history-section {
-            margin-top: 30px;
-            border-top: 2px dashed #ccc;
-            padding-top: 20px;
+        table.history-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
         }
-        .history-item {
-            background: #fdfdfd;
+        table.history-table th, table.history-table td {
             border: 1px solid #ddd;
-            padding: 10px 15px;
-            margin-bottom: 10px;
-            border-radius: 5px;
+            padding: 10px;
+            text-align: center;
         }
-        .correct { color: #28a745; font-weight: bold; }
-        .wrong { color: #dc3545; font-weight: bold; }
-        .ans-explain {
-            font-size: 0.9rem;
-            color: #666;
-            margin-top: 5px;
+        table.history-table th {
+            background-color: #f2f2f2;
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>資訊網路（統整版）線上測驗</h1>
-    <form id="quizForm">
-        <div id="questionsContainer"></div>
-        <button type="button" class="submit-btn" onclick="submitQuiz()">交卷並檢查</button>
-    </form>
+    <h1>Linux 伺服器與網路管理測驗</h1>
+    
+    <div class="nav-tabs">
+        <button class="nav-tab active" onclick="switchTab('quiz')">開始測驗</button>
+        <button class="nav-tab" onclick="switchTab('history')">歷史紀錄</button>
+    </div>
 
-    <div id="currentResult" class="result-box"></div>
+    <!-- 測驗區域 -->
+    <div id="quiz-section" class="section active">
+        <div id="score-panel" style="display:none;"></div>
+        <form id="quiz-form"></form>
+        <button type="button" class="btn" id="submit-btn" onclick="submitQuiz()">交卷看成績與錯題</button>
+    </div>
 
-    <div class="history-section">
-        <h3>歷史考試紀錄</h3>
-        <div id="historyContainer">尚無考試紀錄</div>
+    <!-- 歷史紀錄區域 -->
+    <div id="history-section" class="section">
+        <h2>測驗歷史紀錄</h2>
+        <div id="history-content"></div>
+        <button type="button" class="btn" style="background: #e74c3c;" onclick="clearHistory()">清除歷史紀錄</button>
     </div>
 </div>
 
 <script>
-// 完整題庫資料
+// 完整 100 題原始資料
 const quizData = [
-    {
-        q: "三大電網指的是哪三個網路",
-        type: "checkbox",
-        options: {A: "電信網(Telcom)", B: "有線電視網(Cable)", C: "電腦網路", D: "郵政網路(飛鴿傳輸)", E: "烽火台", F: "人與人的溝通"},
-        answer: ["A", "B", "C"]
-    },
-    {
-        q: "在各種電腦網路的分類項目下，下列哪幾種網路是屬於以規模方式來進行分類的網路?",
-        type: "checkbox",
-        options: {A: "區域網路(Local Area Network, LAN)", B: "廣域網路(Wide Area Network, WAN)", C: "都會網路(Metropolitan Area Network, MAN)", D: "開放式網路(Open Network)", E: "封閉式網路(Closed Network)", F: "主從式架構(Client-Server Model)", G: "對等式架構(Peer-to-Peer Model)", H: "公開網路(Public Network)", I: "私有網路(Private Network)"},
-        answer: ["A", "B", "C"]
-    },
-    {
-        q: "在各種電腦網路的分類項目下，網際網路(Internet)屬於哪幾類的網路?",
-        type: "checkbox",
-        options: {A: "區域網路(Local Area Network, LAN)", B: "廣域網路(Wide Area Network, WAN)", C: "都會網路(Metropolitan Area Network, MAN)", D: "開放式網路(Open Network)", E: "封閉式網路(Closed Network)", F: "主從式架構(Client-Server Model)", G: "對等式架構(Peer-to-Peer Model)", H: "公開網路(Public Network)", I: "私有網路(Private Network)"},
-        answer: ["B", "D", "F"]
-    },
-    {
-        q: "資管系的網路比較偏向於哪一類的網路?",
-        type: "radio",
-        options: {A: "個人網路(Personal Area Network, PAN)", B: "區域網路(Local Area Network, LAN)", C: "都會網路(Metropolitan Area Network, MAN)", D: "廣域網路(Wide Area Network, WAN)"},
-        answer: ["B"]
-    },
-    {
-        q: "Internet上的各種服務器提供各類的服務，其設計上係採用哪種架構?",
-        type: "radio",
-        options: {A: "主從式架構(Client-Server Model)", B: "對等式架構(Peer-to-Peer Model)", C: "網路芳鄰架構(Neighborhood Model)", D: "私有架構(Private Model)"},
-        answer: ["A"]
-    },
-    {
-        q: "在網路協定分層模組中,當每一層要將資料往下一層傳送前會在資料的標頭(header)加上額外的資訊,稱為",
-        type: "radio",
-        options: {A: "封裝", B: "解封裝", C: "簽章", D: "解密", E: "加密"},
-        answer: ["A"]
-    },
-    {
-        q: "通常將資料連結層的封包稱為什麼?",
-        type: "radio",
-        options: {A: "訊框(frame)", B: "表頭(header)", C: "資料報(datagram)", D: "區段(segment)"},
-        answer: ["A"]
-    },
-    {
-        q: "下列何者不屬於 DoD 模型的優點？",
-        type: "radio",
-        options: {A: "分工合作", B: "對等交談", C: "加速傳遞", D: "逐層處理"},
-        answer: ["C"]
-    },
-    {
-        q: "DoD模型的應用層實際上是OSI模型的哪些層。",
-        type: "radio",
-        options: {A: "第一、二、三層", B: "第二、三、四層", C: "第五、六、七層", D: "哪一層都可以"},
-        answer: ["C"]
-    },
-    {
-        q: "OSI網路層最主要的工作是什麼?",
-        type: "radio",
-        options: {A: "資料封包保證送達", B: "定義收送的電壓大小", C: "定址與路由", D: "提供資料流介面"},
-        answer: ["C"]
-    },
-    {
-        q: "網際網路上的TCP/IP位於OSI模型的哪一層",
-        type: "radio",
-        options: {A: "第二、三層", B: "哪一層都可以", C: "第三、四層", D: "第一、二層"},
-        answer: ["C"]
-    },
-    {
-        q: "下列 OSI 模型中何者位於 Frame Relay 裡",
-        type: "radio",
-        options: {A: "鏈結層", B: "會議層", C: "表達層", D: "應用層"},
-        answer: ["A"]
-    },
-    {
-        q: "路由器最少必須能解讀封包在OSI 模型哪一層的資訊。？",
-        type: "radio",
-        options: {A: "第1 層(實體層)", B: "第3 層(網路層)", C: "第2 層(鏈結層)", D: "第4 層(傳輸層)"},
-        answer: ["B"]
-    },
-    {
-        q: "OSI 模型將加密與解密定義為哪一層的工作？",
-        type: "radio",
-        options: {A: "傳輸層", B: "表達層", C: "應用層", D: "網路層"},
-        answer: ["B"]
-    },
-    {
-        q: "下列關於 DoD 網路模型的敘述, 何者為是？",
-        type: "radio",
-        options: {A: "DoD 模型的傳輸層中, 最具代表性的是 IP 通訊協定", B: "DoD 網路模型共分為七層", C: "DoD 網路模型和 OSI 網路模型有各自的架構, 但仍能互相對應", D: "TCP/IP 通訊協定是遵循 DoD 網路模型發展出來的"},
-        answer: ["C"]
-    },
-    {
-        q: "在 DoD 模型中下列何者不屬於連結層的工作？",
-        type: "radio",
-        options: {A: "制訂 MAC Method(方法)", B: "加密", C: "偵錯", D: "同步"},
-        answer: ["B"]
-    },
-    {
-        q: "在ISO RM中,提供可靠性傳輸的功能是屬於哪一層的功能?",
-        type: "radio",
-        options: {A: "表達層(Presentation)", B: "對話層(Session)", C: "傳輸層(Transport)", D: "網路層(Network)", E: "資料連結層(Data Link)", F: "應用層(Application)"},
-        answer: ["C"]
-    },
-    {
-        q: "在ISO RM中,提供資料壓縮與加解密處理的功能是屬於哪一層的功能?",
-        type: "radio",
-        options: {A: "對話層(Session)", B: "網路層(Network)", C: "傳輸層(Transport)", D: "應用層(Application)", E: "表達層(Presentation)", F: "資料連結層(Data Link)"},
-        answer: ["E"]
-    },
-    {
-        q: "關於 OSI 模型，下列敘述何者正確？",
-        type: "radio",
-        options: {A: "最上層是會議層", B: "最底層是鏈結層", C: "網路層在傳輸層之上", D: "鏈結層在網路層之下"},
-        answer: ["D"]
-    },
-    {
-        q: "下列何者為100BaseT與1000BaseT最大的差異在",
-        type: "radio",
-        options: {A: "接頭規格", B: "每段長度", C: "線材規格", D: "傳輸速度"},
-        answer: ["D"]
-    },
-    {
-        q: "許多長距離傳輸系統喜歡採用調變技術傳送資料,請問此技術是透過什麼來傳遞信號?",
-        type: "radio",
-        options: {A: "Frequency(頻率)", B: "Carrier(載波)", C: "Voltage(電壓)", D: "Phase(相位)"},
-        answer: ["B"]
-    },
-    {
-        q: "倘若有一5KHz類比訊號欲進行數位化處理，則其取樣頻率至少需要多少才可以無失真的還原?",
-        type: "radio",
-        options: {A: "20KHz", B: "10KHz", C: "64KHz", D: "4KHz", E: "5KHz"},
-        answer: ["B"]
-    },
-    {
-        q: "下列何種傳輸媒介最容易受到雜訊干擾?(單選)",
-        type: "radio",
-        options: {A: "STP", B: "Coaxial cable", C: "Fiber", D: "UTP"},
-        answer: ["D"]
-    },
-    {
-        q: "Delta modulation亦為類比(Analog)訊號轉換為數位(Digital)訊號的技術，它具有什麼缺點?",
-        type: "radio",
-        options: {A: "計算較耗資源，現因硬體技術提昇，已逐漸普及", B: "紀錄的資料量較少", C: "有錯誤發生時，會造成大量資料錯誤", D: "計算太過複雜"},
-        answer: ["C"]
-    },
-    {
-        q: "如何定義類比(Analog)訊號的頻寬(Bandwidth)",
-        type: "radio",
-        options: {A: "有效的傳輸量", B: "最高頻率與最低頻率的差", C: "傳輸速度", D: "以最大波長計"},
-        answer: ["B"]
-    },
-    {
-        q: "下列何者採用並行式的傳輸方式",
-        type: "radio",
-        options: {A: "RS-232", B: "網路卡", C: "LPT印表機", D: "USB硬碟"},
-        answer: ["C"]
-    },
-    {
-        q: "1000BaseT係使用哪種標準接頭?",
-        type: "radio",
-        options: {A: "RJ-45", B: "RJ-11", C: "RG-11", D: "RG-45"},
-        answer: ["A"]
-    },
-    {
-        q: "無線的通訊環境中，與有線網路比較，哪些項目正確?(複選)",
-        type: "checkbox",
-        options: {A: "容易受干擾", B: "傳輸速率高", C: "無法偵測訊號發生碰撞", D: "傳輸距離較遠"},
-        answer: ["A", "C"]
-    },
-    {
-        q: "將類比訊號(Analog)進行調變(Modulation)的技術有哪些?",
-        type: "checkbox",
-        options: {A: "Amplitude Modulation", B: "Phase Modulation", C: "Code Modulation", D: "Frequency Modulation"},
-        answer: ["A", "B", "D"]
-    },
-    {
-        q: "利用雙絞線(Twisted pair)來傳遞訊號，每一區段的最大傳送距離為",
-        type: "radio",
-        options: {A: "200m", B: "500m", C: "100m", D: "50m", E: "185m"},
-        answer: ["C"]
-    },
-    {
-        q: "若一具有兩階數位訊號的系統可以傳送1000 Baud，問其傳輸速度為多少bps?",
-        type: "radio",
-        options: {A: "1000", B: "2000", C: "1500", D: "500"},
-        answer: ["A"]
-    },
-    {
-        q: "下列哪種Transmission media在傳輸端與接收端之間不能有任何遮擋",
-        type: "radio",
-        options: {A: "雷射光", B: "無線電", C: "藍芽", D: "人造衛星"},
-        answer: ["A"]
-    },
-    {
-        q: "將類比(Analog)訊號以PCM方法轉換為數位(Digital)訊號不須經過那個模組來處理",
-        type: "radio",
-        options: {A: "取樣(Sampling)", B: "量化(Quantization)", C: "編碼(Encoding)", D: "去雜訊(Denoise)"},
-        answer: ["D"]
-    },
-    {
-        q: "以下何者不是區域網路常會使用之傳輸媒體?(單選)",
-        type: "radio",
-        options: {A: "光纖(Fiber-optics)", B: "紅外線(Infrared)", C: "同軸電纜(Coaxial cable)", D: "雙絞線(Twisted-wired pairs)"},
-        answer: ["B"]
-    },
-    {
-        q: "下列何者係使用半雙工的方式傳送資料",
-        type: "radio",
-        options: {A: "電話", B: "警用無線電", C: "收音機", D: "電視機"},
-        answer: ["B"]
-    },
-    {
-        q: "下列傳輸媒介中，何者的Transmission rate (傳送速率)最快(即頻寬最大) ?",
-        type: "radio",
-        options: {A: "10BaseT", B: "10Base5", C: "10BaseF", D: "一樣大", E: "10Base2"},
-        answer: ["D"]
-    },
-    {
-        q: "請問頻寬的單位有哪些",
-        type: "checkbox",
-        options: {A: "Voltage(伏特)", B: "Hz(赫茲)", C: "Baud Rate(鮑率)", D: "Phase(相位)", E: "Amplitude(振幅)", F: "bps(bit/second)"},
-        answer: ["B", "C", "F"]
-    },
-    {
-        q: "Quadrature Amplitude Modulation(QAM)係採用哪兩種調變方法達成提高效能的目的?",
-        type: "checkbox",
-        options: {A: "Phase shift keying(PSK)", B: "Frequency shift keying(FSK)", C: "Amplitude shift keying(ASK)", D: "Code modulation(CD)", E: "Frequency modulation(FM)"},
-        answer: ["A", "C"]
-    },
-    {
-        q: "下列何者為10Base5與10Base2的差異?",
-        type: "checkbox",
-        options: {A: "每段長度", B: "傳輸速度", C: "接頭規格", D: "線材規格"},
-        answer: ["A", "C", "D"]
-    },
-    {
-        q: "數據機屬於下列哪種設備",
-        type: "radio",
-        options: {A: "DCE", B: "DSE", C: "以上皆非", D: "DTE"},
-        answer: ["A"]
-    },
-    {
-        q: "下列哪種編碼方式可以讓接收端與傳送端達成同步",
-        type: "radio",
-        options: {A: "MLT-3", B: "NRZI", C: "NRZ", D: "Manchester"},
-        answer: ["D"]
-    },
-    // 簡答/計算題轉化為填空
-    {
-        q: "【ErrorControl】傳送資料\"11100100\"採用 Odd Parity check (1 Byte)，總共應送出多少位元？",
-        type: "text",
-        answer: "9"
-    },
-    {
-        q: "【ErrorControl】傳送資料\"11100100\"採用 Odd Parity check (1 Byte)，送出的資料為何？",
-        type: "text",
-        answer: "111001001"
-    },
-    {
-        q: "【ErrorControl】傳送資料\"11100100\"採用 4 bit Checksum (1 Byte)，總共應送出多少位元？",
-        type: "text",
-        answer: "12"
-    },
-    {
-        q: "【ErrorControl】傳送資料\"11100100\"採用 4 bit Checksum (1 Byte)，送出的資料為何？",
-        type: "text",
-        answer: "111001001100"
-    },
-    {
-        q: "【ErrorControl】傳送資料\"11100100\"採用 CRC (x3 + x + 1) (1 Byte)，總共應送出多少位元？",
-        type: "text",
-        answer: "11"
-    },
-    {
-        q: "【ErrorControl】傳送資料\"11100100\"採用 CRC (x3 + x + 1) (1 Byte)，送出的資料為何？",
-        type: "text",
-        answer: "11100100010"
-    },
-    {
-        q: "【ErrorControl】傳送資料\"11100100\"採用 漢明碼 (1 Byte)，總共應送出多少位元？",
-        type: "text",
-        answer: "12"
-    },
-    {
-        q: "【ErrorControl】傳送資料\"11100100\"採用 漢明碼 (1 Byte)，送出的資料為何？",
-        type: "text",
-        answer: "111010100011"
-    },
-    {
-        q: "【ErrorControl】傳送 ASCII \"Hi\" (Hex=48 & 69) 採用 Even Parity (2 Byte)，總共應送出多少位元？",
-        type: "text",
-        answer: "17"
-    },
-    {
-        q: "【ErrorControl】傳送 ASCII \"Hi\" (Hex=48 & 69) 採用 Even Parity (2 Byte)，送出的資料為何？",
-        type: "text",
-        answer: "01001000011010010"
-    },
-    {
-        q: "【ErrorControl】傳送 ASCII \"Hi\" (Hex=48 & 69) 採用 8 bit Checksum (2 Byte)，總共應送出多少位元？",
-        type: "text",
-        answer: "24"
-    },
-    {
-        q: "【ErrorControl】傳送 ASCII \"Hi\" (Hex=48 & 69) 採用 8 bit Checksum (2 Byte)，送出的資料為何？",
-        type: "text",
-        answer: "010010000110100101001110"
-    },
-    {
-        q: "【ErrorControl】傳送 ASCII \"Hi\" (Hex=48 & 69) 採用 CRC (x4 + x + 1) (2 Byte)，總共應送出多少位元？",
-        type: "text",
-        answer: "20"
-    },
-    {
-        q: "【ErrorControl】傳送 ASCII \"Hi\" (Hex=48 & 69) 採用 CRC (x4 + x + 1) (2 Byte)，送出的資料為何？",
-        type: "text",
-        answer: "01001000011010011100"
-    },
-    {
-        q: "【ErrorControl】傳送 ASCII \"Hi\" (Hex=48 & 69) 採用 漢明碼 (2 Byte)，總共應送出多少位元？",
-        type: "text",
-        answer: "21"
-    },
-    {
-        q: "【ErrorControl】傳送 ASCII \"Hi\" (Hex=48 & 69) 採用 漢明碼 (2 Byte)，送出的資料為何？",
-        type: "text",
-        answer: "010010000011001000100"
-    },
-    {
-        q: "下列何者屬於第二層(資料鏈結層)的設備 ?",
-        type: "radio",
-        options: {A: "Repeater(中繼器)", B: "Bridge(橋接器)", C: "Router(路由器)", D: "Gateway(閘道器)"},
-        answer: ["B"]
-    },
-    {
-        q: "下列哪一種設備可以延伸網路，但不會擴大碰撞領域，只是無法阻隔廣播封包?",
-        type: "radio",
-        options: {A: "Repeater(中繼器)", B: "Bridge(橋接器)", C: "Router(路由器)", D: "Gateway(閘道器)"},
-        answer: ["B"]
-    },
-    {
-        q: "下列哪種Division Multiplexing(分割多工)的技術只能用在光纖上?",
-        type: "radio",
-        options: {A: "WDM", B: "FDM", C: "LDM", D: "CDM", E: "TDM"},
-        answer: ["A"]
-    },
-    {
-        q: "倘若傳送端要傳送1個Byte資料給接收端，若傳送端與接收端皆採用CRC(函數為x5 + x + 1)檢查，每個傳送單位為1個Byte，請問傳送端要送出多少bits?",
-        type: "radio",
-        options: {A: "9", B: "8", C: "13", D: "10", E: "12", F: "3", G: "4"},
-        answer: ["C"]
-    },
-    {
-        q: "下列何者屬於第三層(網路層)的設備 ?",
-        type: "radio",
-        options: {A: "Gateway(閘道器)", B: "Repeater(中繼器)", C: "Bridge(橋接器)", D: "Router(路由器)"},
-        answer: ["D"]
-    },
-    {
-        q: "倘若傳送端要傳送1個Byte資料給接收端，若傳送端與接收端皆採用漢明碼(Hamming code)檢查，每個傳送單位為1個Byte，請問傳送端要送出多少bits?",
-        type: "radio",
-        options: {A: "10", B: "8", C: "5", D: "9", E: "13", F: "4", G: "12"},
-        answer: ["G"]
-    },
-    {
-        q: "下列哪一種設備不會擴大碰撞領域，也可以阻隔廣播封包?",
-        type: "radio",
-        options: {A: "Router(路由器)", B: "Repeater(中繼器)", C: "Gateway(閘道器)", D: "Bridge(橋接器)"},
-        answer: ["A"]
-    },
-    {
-        q: "假設在一條100Mbps的傳輸通道上,有10個使用者利用Synchronous(同步式)TDM作法來傳輸資料,則一個使用者最快的傳輸速度為多少Mbps?",
-        type: "radio",
-        options: {A: "1000", B: "1", C: "10", D: "100", E: "以上皆非"},
-        answer: ["C"]
-    },
-    {
-        q: "常用來進行錯誤碼更正的方法為",
-        type: "radio",
-        options: {A: "PCM", B: "Hamming code", C: "Parity check", D: "Checksum"},
-        answer: ["B"]
-    },
-    {
-        q: "下列哪些技術可以執行錯誤偵測? (ps.不用管效率及成效優劣，含只能測錯1個位元)",
-        type: "checkbox",
-        options: {A: "Hamming code", B: "Checksum", C: "Parity check", D: "PCM", E: "CRC"},
-        answer: ["A", "B", "C", "E"]
-    },
-    {
-        q: "倘若傳送端要傳送1個Byte資料給接收端，若傳送端與接收端皆採用Odd Parity check，每個傳送單位為1個Byte，請問傳送端要送出多少bits?",
-        type: "radio",
-        options: {A: "9", B: "8", C: "12", D: "10", E: "13"},
-        answer: ["A"]
-    },
-    {
-        q: "交換器（Switch）主要運作在OSI模型的哪一層？",
-        type: "radio",
-        options: {A: "傳輸層", B: "資料鏈結層", C: "實體層", D: "網路層"},
-        answer: ["B"]
-    },
-    {
-        q: "最常用來進行資料錯誤檢查的方法為何?",
-        type: "radio",
-        options: {A: "PCM", B: "Parity check", C: "CRC", D: "Checksum"},
-        answer: ["C"]
-    },
-    {
-        q: "常見的網路設備有交換器(Switch)和路由器(Router)，有關其用途及特性說明，下列何者有誤？",
-        type: "radio",
-        options: {A: "路由器連接 IP 不同網段進行封包路徑的配置，相關協定有 BGP、RIP、OSPF", B: "路由器可執行 NAT / DHCP / Firewall / VPN / QoS 功能", C: "L2 及 L3 交換器(Layer 2、Layer 3 Switch)均不可作路徑選擇", D: "交換器依 MAC 位址學習連接不同區域網路，並透過封包篩選切割碰撞區域"},
-        answer: ["C"]
-    },
-    {
-        q: "下列何者屬於第一層(實體層)的設備 ?",
-        type: "radio",
-        options: {A: "Repeater(中繼器)", B: "Gateway(閘道器)", C: "Bridge(橋接器)", D: "Router(路由器)"},
-        answer: ["A"]
-    },
-    {
-        q: "假設在一條100Mbps的傳輸通道上,有10個使用者利用Statical(統計式)TDM作法來傳輸資料,則一個使用者最快的傳輸速度為多少Mbps?",
-        type: "radio",
-        options: {A: "以上皆非", B: "1", C: "100", D: "1000", E: "10"},
-        answer: ["C"]
-    },
-    {
-        q: "使用CRC-16傳送64Byte的資料,若不考慮Header(表頭)資料,請問接收端需收到多少Byte的資料才對?",
-        type: "radio",
-        options: {A: "64", B: "65", C: "66", D: "63"},
-        answer: ["C"]
-    },
-    {
-        q: "一條共享的銅線傳輸媒體，可以使用哪些Division Multiplexing(分割多工)的技術來達成?",
-        type: "checkbox",
-        options: {A: "WDM", B: "TDM", C: "CDM", D: "FDM", E: "LDM"},
-        answer: ["B", "C", "D"]
-    },
-    {
-        q: "倘若傳送端要傳送1個Byte資料給接收端，若傳送端與接收端皆採用2 bit的Checksum，每個傳送單位為1個Byte，請問傳送端要送出多少bits?",
-        type: "radio",
-        options: {A: "9", B: "13", C: "11", D: "12", E: "8", F: "10"},
-        answer: ["F"]
-    }
+    { id: 1, type: "multiple", q: "關於Telnet伺服器的敘述，下列哪些錯誤？", options: ["A. 預設會限制root不能登入系統", "B. 在/etc/nologin檔案中可設定不可登入的使用者清單", "C. 在預設的狀況下，只要開啟Telnet服務，所有使用者都能登入系統", "D. 若在設定/etc/nologin檔案時已有使用者登入系統，則使用者會被立刻強迫登出"], ans: ["B", "C", "D"], exp: "" },
+    { id: 2, type: "single", q: "Sendmail Server啟動時，下列哪一項是使用到的主要設定檔？", options: ["A. /etc/mail/access", "B. /etc/mail/submit.cf", "C. /etc/mail/sendmail.cf", "D. /etc/mail/sendmail.mc"], ans: ["C"], exp: "Sendmail Server在啟動時使用的主要設定檔是sendmail.cf。" },
+    { id: 3, type: "single", q: "下列哪一項協定是TCP/IP中用來將IP位址解析成MAC位址？", options: ["A. TCP", "B. UDP", "C. ARP", "D. ICMP"], ans: ["C"], exp: "" },
+    { id: 4, type: "single", q: "若要在Sendmail中設定郵件轉發（Forwarding），應該在下列哪一個檔案進行設定？", options: ["A. /etc/mail/access", "B. /etc/mail/sendmail.cf", "C. /etc/aliases", "D. /var/spool/mail"], ans: ["C"], exp: "使用/etc/aliases檔案，您可以定義郵件地址的別名或將某個地址的郵件重新定向到其他地址或多個地址。" },
+    { id: 5, type: "multiple", q: "關於Sendmail以standalone模式運作的相關設定，下列哪些正確？", options: ["A. 必須在/etc/inetd.conf或/etc/xinetd.conf中設定Sendmail", "B. 使用/etc/hosts.allow和/etc/hosts.deny可以限制SMTP的連線範圍", "C. SMTP通常在port 25傾聽等待連線", "D. 使用ipchains或iptables可以限制SMTP的連線範圍"], ans: ["B", "C"], exp: "" },
+    { id: 6, type: "single", q: "當您想從域名查找其相應的IP地址時，屬於下列哪一項操作？", options: ["A. 反解查詢", "B. 領域查詢", "C. 權威查詢", "D. 正解查詢"], ans: ["D"], exp: "" },
+    { id: 7, type: "single", q: "關於Sendmail的敘述，下列哪一項錯誤？", options: ["A. 預設安裝的Sendmail，只有本機可以寄信", "B. 當系統安裝完成，Sendmail套件就安裝完成並已啟動Sendmail服務", "C. 安裝好的Sendmail，啟動的port埠號為110", "D. 預設安裝的Sendmail，可以提供系統寄信給root管理者"], ans: ["C"], exp: "Sendmail預設使用的SMTP埠號為25，不是110。" },
+    { id: 8, type: "single", q: "小明現在正在替公司的Ubuntu Linux進行SELinux安全模組設定。他希望公司的網站網頁可以直接連結至資料庫，請問他應該要開放下列哪一個布林值？", options: ["A. httpd_can_network_connect", "B. httpd_can_connect_to_mysql", "C. httpd_can_network_connect_db", "D. httpd_can_connect_database"], ans: ["C"], exp: "" },
+    { id: 9, type: "single", q: "下列哪一項是Squid服務的預設連線埠號？", options: ["A. 3128", "B. 443", "C. 8080", "D. 80"], ans: ["A"], exp: "Squid服務啟動後，預設會開啟3128連線埠號。" },
+    { id: 10, type: "single", q: "Samba分享資源，分享設定檔中hosts allow = 要使用網域名稱，必須在global section開啟主機名稱查詢，下列哪一項設定開啟此項查詢？", options: ["A. domainname lookups = yes", "B. dns allow = yes", "C. dns search = yes", "D. hostname lookups = yes"], ans: ["D"], exp: "" },
+    { id: 11, type: "single", q: "Samba伺服器tqc8分享資源common，請問下列哪一項指令可以使用帳號lin密碼123登入？", options: ["A. smbclient //tqc8/common -P lin%123", "B. smbclient //tqc8/common -U lin -P 123", "C. smbclient //tqc8/common -U lin:123", "D. smbclient //tqc8/common -U lin%123"], ans: ["D"], exp: "" },
+    { id: 12, type: "single", q: "小花想要連結公司Ubuntu Linux Server上的LDAP服務，並且進行帳號資料的查詢，請問她可以執行下列哪一個指令？", options: ["A. ldapsearch", "B. ldapadmin", "C. ldapquery", "D. ldaplink"], ans: ["A"], exp: "" },
+    { id: 13, type: "single", q: "我們常用的瀏覽器，例如firefox，是屬於OSI模型中的哪一層？", options: ["A. 網路層（Network Layer）", "B. 表現層（Presentation Layer）", "C. 應用層（Application Layer）", "D. 會議層（Session Layer）"], ans: ["C"], exp: "" },
+    { id: 14, type: "single", q: "如附圖所示，為某台名稱伺服器的/etc/bind/named.conf檔案部分內容，請問下列敘述哪一項錯誤？", options: ["A. 對於DNS區域example.com而言，主要名稱伺服器的IP位址是192.168.254.2", "B. 該台名稱伺服器會將區域example.com的正解區域檔案儲存在/etc/bind/", "C. 該台名稱伺服器會將區域example.com的正解區域檔案儲存在/var/cache/bind", "D. 對於DNS區域example.com而言，該台名稱伺服器是次要名稱伺服器"], ans: ["B"], exp: "當設定檔案裡出現相對路徑時，會和directory所指定的/var/cache/bind結合以形成絕對路徑。" },
+    { id: 15, type: "single", q: "如附圖所示，已知目前Ubuntu主機是採取預設的netplan統一管理網路設定，小明想要檢查目前實驗室Ubuntu主機預設路由的設定狀況，於是他查看/etc/netplan/03-demo03-config.yaml網卡組態設定檔，該檔案內容如附圖，請問下列敘述哪一項正確？", options: ["A. 目前預設路由設定為10.0.3.254以及10.0.5.254，其中10.0.5.254的metric為200、優先權較高，故10.0.5.254", "B. 目前預設路由設定為10.0.3.254以及10.0.5.254；其實這是設定上的錯誤，套用時會產生錯誤訊息，必須修正", "C. 目前預設路由設定為10.0.3.254以及10.0.5.254。未匹配任何路由規則的封包將會輪流由10.0.3.254與", "D. 目前預設路由設定為10.0.3.254以及10.0.5.254，其中10.0.3.254的metric為100、優先權較高，故10.0.3.254"], ans: ["D"], exp: "" },
+    { id: 16, type: "single", q: "設定郵件伺服器的別名，如果要從檔案/var/mail/pilot.aliases讀入用戶的別名列表，應在/etc/aliases檔案中進行下列哪一種記述？", options: ["A. csf: /var/mail/pilot.aliases", "B. csf: DX/var/mail/pilot.aliases", "C. csf: :include:/var/mail/pilot.aliases", "D. csf: CF/var/mail/pilot.aliases"], ans: ["C"], exp: "在/etc/aliases檔案中，使用\":include:\"指示符可以將指定的檔案中的內容作為別名列表引入。" },
+    { id: 17, type: "single", q: "如果Apache想要啟用加密傳輸協定https，請問下列哪一項是必須啟用的模組？", options: ["A. encryption", "B. ssl", "C. https", "D. tls"], ans: ["B"], exp: "(A)(C)(D)皆不存在此模組名稱。" },
+    { id: 18, type: "single", q: "如附圖所示，是Nginx設定檔案的一部分，當有網頁瀏覽器要透過該Nginx讀取某目錄底下的資源時，需要輸入帳號和密碼。Nginx會檢查一Apache所採用的格式之密碼檔內容，確定該輸入帳號及密碼是否正確。關於指定該密碼檔案位置的設定敘述，下列敘述哪一項正確？", options: ["A. auth_basic_file", "B. auth_basic_passwd_file", "C. auth_basic_user_file", "D. auth_file"], ans: ["C"], exp: "" },
+    { id: 19, type: "single", q: "如附圖所示，下列哪一項數值用來讓次要名稱伺服器知道每隔多久的時間，必須向主要名稱伺服器檢查正/反解區域檔是否有更新？", options: ["A. 3w", "B. 12h", "C. 2h", "D. 15m"], ans: ["B"], exp: "" },
+    { id: 20, type: "single", q: "小花開發好的程式連線埠為TCP 80埠，如果想在防火牆規則上，指定為第一個被允許的規則，請問要如何使用ufw設定？", options: ["A. ufw replace 1 allow 80/tcp", "B. ufw insert 1 allow 80/tcp", "C. ufw rules 1 allow 80/tcp", "D. ufw allow 80/tcp rule 1"], ans: ["B"], exp: "" },
+    { id: 21, type: "multiple", q: "關於IMAP的敘述，下列哪些正確？", options: ["A. 主要用於離線模式", "B. 適用於多於一台電腦使用", "C. 收信時不需把信件全文下載至電腦", "D. 可以於郵件伺服器上建立資料目錄存郵件"], ans: ["B", "C", "D"], exp: "" },
+    { id: 22, type: "single", q: "如附圖所示，小明查看/etc/netplan目錄內的網路組態設定檔案（*.yaml），他發現該目錄存在著許多YAML檔案，請問下列敘述哪一項正確？", options: ["A. 可以有多個組態檔案、通常以數字起頭，而netplan會依照字母順序、由小而大、逐一套用所有的YAML組態", "B. 可以有多個組態檔案、通常以數字起頭，而netplan會依照字母順序來套用最後一個YAML組態設定檔案，而", "C. netplan組態檔案只能定義一個（副檔名為yaml），若定義超過一個以上的組態設定檔案，套用時netplan會出", "D. 可以有多個組態檔案、通常以數字起頭，而netplan會依照字母順序來套用第一個YAML組態設定檔案，而忽"], ans: ["A"], exp: "" },
+    { id: 23, type: "single", q: "小花是公司的Ubuntu Linux系統管理員，她現在想要啟動已安裝完成的SELinux安全功能，請問她應該要執行下列哪一個指令？", options: ["A. selinux start ; reboot", "B. selinux enabled", "C. selinux-activate ; reboot", "D. selinux ; reboot"], ans: ["C"], exp: "剛安裝完成的SELinux安全功能，在設定好啟動功能之後，需要重新開機，才能完全啟動。" },
+    { id: 24, type: "single", q: "請問下列哪一個使用者帳號是當Apache讀取網站裡的網頁檔案或存放這些檔案的目錄時，會使用的使用者帳號？", options: ["A. www-data", "B. apache", "C. httpd", "D. root"], ans: ["A"], exp: "" },
+    { id: 25, type: "single", q: "為了增加Mail Server的安全性，哪一項建議可以防止不必要的嘗試連線和攻擊？", options: ["A. 使用防火牆來限制未經授權的連線", "B. 使用弱密碼，以便用戶可以輕鬆記住", "C. 允許所有用戶訪問伺服器的管理界面", "D. 允許任何IP地址連線"], ans: ["A"], exp: "" },
+    { id: 26, type: "single", q: "Nginx網頁伺服器啟動後，正常情況下會開啟下列哪一項埠號提供無加密的網頁流量？", options: ["A. 110", "B. 53", "C. 80", "D. 25"], ans: ["C"], exp: "(A)TCP port 25是SMTP在使用。(B)UDP port 53是DNS查詢在使用，TCP port 53是DNS用來進行zone transfer。(D)TCP port 110是POP3在使用。" },
+    { id: 27, type: "single", q: "下列哪一種接頭是應用於1000Base-T（Gigabit Ethernet）網路？", options: ["A. 終端電阻", "B. T型接頭", "C. RJ-45", "D. BNC"], ans: ["C"], exp: "" },
+    { id: 28, type: "single", q: "Sendmail大量運用m4這個程式來編譯Sendmail的組態檔案，下列哪一項是m4的主要功能？", options: ["A. m4是一個Macro Processor", "B. m4是一個C Compiler", "C. m4是一個Shell", "D. m4是一個Text Editor"], ans: ["A"], exp: "" },
+    { id: 29, type: "single", q: "下列哪一項設定可以讓Nginx使用TLS 1.3來保護網頁流量？", options: ["A. ssl_protocol TLSv1.3; #使用TLS 1.3", "B. ssl_protocols TLSv1.3; #使用TLS 1.3", "C. tls_protocols TLSv1.3; #使用TLS 1.3", "D. tls_protocol TLSv1.3; #使用TLS 1.3"], ans: ["B"], exp: "(B)(C)(D)皆語法錯誤。" },
+    { id: 30, type: "multiple", q: "下列哪些資訊會在Sendmail佇列中呈現？", options: ["A. 到達時間（Arrival Time）", "B. 收信者（Recipients）", "C. 送信者（Sender）", "D. 郵件大小（Message Size）"], ans: ["A", "B", "C", "D"], exp: "" },
+    { id: 31, type: "single", q: "IPv6的全域位址如同IPv4的Public IP，關於IPv6全域位址的敘述下列哪一項正確？", options: ["A. 前四個位元固定為0011", "B. 前四個位元固定為1100", "C. 前三個位元固定為001", "D. 前三個位元固定為100"], ans: ["C"], exp: "" },
+    { id: 32, type: "single", q: "下列哪一項設定可以將https所需之憑證對應的私密金鑰（/etc/ssl/private/apache-selfsigned.key）指定給Apache的虛擬主機？", options: ["A. SSLCertKeyFile /etc/ssl/private/apache-selfsigned.key", "B. SSLCertificateKeyFile /etc/ssl/private/apache-selfsigned.key", "C. SSLCertKey /etc/ssl/private/apache-selfsigned.key", "D. SSLCertificateKey /etc/ssl/private/apache-selfsigned.key"], ans: ["B"], exp: "" },
+    { id: 33, type: "single", q: "下列哪一項為DHCP伺服器及用戶端預設使用的埠號，server port/client port？", options: ["A. 53/68", "B. 68/67", "C. 67/68", "D. 67/53"], ans: ["C"], exp: "" },
+    { id: 34, type: "single", q: "小明想要替公司的Ubuntu Linux Server架設LDAP服務，請問他需要安裝下列哪一個套件以達成目標？", options: ["A. ldapd", "B. Account", "C. slapd", "D. openLDAP"], ans: ["C"], exp: "" },
+    { id: 35, type: "single", q: "Telnet伺服器（Server）啟動後，通常會綁定下列哪一個號碼作為Client的連接埠號？", options: ["A. 23", "B. 20", "C. 21", "D. 22"], ans: ["A"], exp: "" },
+    { id: 36, type: "single", q: "關於UDP及TCP的敘述，下列哪一項錯誤？", options: ["A. UDP可靠性低於TCP", "B. UDP傳輸效率高於TCP", "C. UDP/TCP傳送資料前都會經過連線交握（handshaking）的動作", "D. UDP/TCP封包都有來源埠號及目的埠號"], ans: ["C"], exp: "UDP不會有連線交握的情況，但TCP為了確保對方能夠正確收到封包，會進行連線交握。" },
+    { id: 37, type: "multiple", q: "iptables的NAT（Network Address Translation）表格主要是用於處理來源地址、目標地址或Port Number的轉換。請問在NAT表格當中，包含哪些規則鏈（Chain）？", options: ["A. OUTPUT", "B. POSTROUTING", "C. PREROUTING", "D. INPUT"], ans: ["A", "B", "C"], exp: "" },
+    { id: 38, type: "single", q: "下列哪一個檔案是用來定義Linux常用的連接埠號（Port Number）、連線方式（tcp/udp）與服務程式的對應關係？", options: ["A. /etc/xinetd.conf", "B. /etc/services", "C. /etc/hosts", "D. /etc/hosts.allow"], ans: ["B"], exp: "(A)是正解。(B)是xinetd組態設定檔案。(C)定義主機名稱與IP Address的對應關係。(D)是TCP Wrapper重要檔案之一。" },
+    { id: 39, type: "single", q: "小花現在正在替公司的Ubuntu Linux進行SELinux安全模組設定。她應該利用下列哪一個指令查看SELinux所有的布林值？", options: ["A. getseboolen -a", "B. getsebool -a", "C. getsebool --list-all", "D. getseboolen --list-all"], ans: ["B"], exp: "" },
+    { id: 40, type: "single", q: "POP3和IMAP屬於下列哪一類型的電子郵件服務？", options: ["A. 郵件用戶代理（MUA）", "B. 郵件傳輸代理（MTA）", "C. 郵件投遞代理（MDA）", "D. 郵件接收代理（MRA）"], ans: ["D"], exp: "" },
+    { id: 41, type: "single", q: "如附圖所示，為Apache提供的一種基本的（Basic）使用者名稱和密碼認證功能，當網頁瀏覽器要瀏覽某目錄下的資源時，會出現一個對話視窗詢問使用者帳號和密碼，需輸入正確方可開始瀏覽該目錄下的資源。網頁伺服器端需要為受保護的目錄建立合法的使用者帳號和密碼，請問下列哪一項指令可以用來建立？", options: ["A. passwd", "B. htpasswd", "C. crypt", "D. auth"], ans: ["B"], exp: "" },
+    { id: 42, type: "single", q: "下列哪一個named的選項可以設定named的程序擁有者？", options: ["A. -U", "B. -u", "C. -l", "D. –L"], ans: ["B"], exp: "" },
+    { id: 43, type: "single", q: "小揚的公司內部有一Linux防火牆，分別連接192.168.0.0/24以及172.16.1.0/24兩個網段以及連至DMZ的網路。小揚需要允許192.168.0.0/24網段的電腦連線至DMZ上的Samba Server，請問他該如何使用ufw指令調整防火牆？", options: ["A. ufw allow from 192.168.0.0/24 to any app Samba", "B. ufw allow from 172.16.1.0/24", "C. ufw allow from 192.168.0.0/24 to DMZ", "D. ufw allow app Samba to 192.168.0.0/24"], ans: ["A"], exp: "ufw指令可配合app與from兩項輔助選項，指定可連線通過的網段，連至網路上的應用程式伺服器。" },
+    { id: 44, type: "single", q: "在Sendmail系統中，欲將寄給admin的信件轉給webadm這個帳號，在別名檔應使用下列哪一項設定？", options: ["A. admin: webadm", "B. root: webadm", "C. webadm: admin", "D. admin: root"], ans: ["A"], exp: "" },
+    { id: 45, type: "multiple", q: "關於SSH伺服器的敘述，下列哪一項錯誤？", options: ["A. 使用SSH連線遠端主機時如果未指定帳號，系統將以本地端目前的使用者帳號來嘗試登入遠端機器", "B. 在用戶端使用者的家目錄下的~/.ssh/known_hosts會記錄曾經連線過的主機的public key", "C. 在/etc/nologin檔案中可設定SSH不可登入的使用者清單", "D. Ubuntu 22.04的root帳號是無法利用SSH登入遠端系統"], ans: ["C", "D"], exp: "" },
+    { id: 46, type: "single", q: "下列哪一項指令可以離開nslookup交談模式？", options: ["A. exit", "B. quit", "C. bye", "D. return"], ans: ["A"], exp: "在Linux作業系統，如：Ubuntu 22.04或Rocky Linux 9.2，只有指令exit可以離開nslookup交談模式。但如果是在Windows作業系統，指令exit和指令quit都可以離開nslookup交談模式。" },
+    { id: 47, type: "single", q: "小明在公司內負責Ubuntu Linux Server的安全工作。請問他所考慮進行防護的工作，下列哪一項錯誤？", options: ["A. 以TCP/IP堆疊進行考慮與佈署防護機制", "B. 建請公司採購相當數量的滅火器，放置於機櫃內", "C. 從資安三要素CIA考慮Server上的服務安全設定鬆緊程度", "D. 考慮網路威脅程度，建置足夠的防禦縱深機制"], ans: ["B"], exp: "" },
+    { id: 48, type: "single", q: "請問TCP 22埠號為下列哪一個Daemon所使用？", options: ["A. Telnet Server", "B. SSH Server", "C. FTP Server", "D. SMTP Server"], ans: ["B"], exp: "" },
+    { id: 49, type: "single", q: "執行route指令查看路由表時，Default Gateway的Flags為UG，請問代表下列哪一項意思？", options: ["A. 使用動態路由，恢復路由資訊的旗標", "B. 這個路由將不會被接受", "C. 停止該筆紀錄預設路由的功能", "D. 標示路由已啟動且需要透過Gateway轉遞封包"], ans: ["D"], exp: "U表示該條route啟用中(UP)，G表示作用中的Gateway；故(D)是正解。" },
+    { id: 50, type: "multiple", q: "若想解決Sendmail的過度開放Relay問題，下列哪些方式是可行的？", options: ["A. 只開放Relay功能給127.0.0.1", "B. 委派專人幫公司所有人寄信", "C. 只開放給內部網路，只有在該網路中才可使用SMTP寄信", "D. 搭配使用SASL，要通過認證後才能寄信"], ans: ["C", "D"], exp: "" },
+    { id: 51, type: "single", q: "下列哪一項是SSH替代Telnet的最主要原因？", options: ["A. SSH使用了加密技術，因此通訊速度較快", "B. SSH比較不會對伺服器造成額外的負擔", "C. Telnet傳輸資訊時所有資料都是明文，有安全疑慮", "D. Telnet的使用者認證需要花不少時間，必須改進"], ans: ["C"], exp: "" },
+    { id: 52, type: "single", q: "在Nginx中，若有一網站因故要改使用新的域名www.domain2.com，考量到可能有些使用者的網頁瀏覽器書籤儲存著舊的域名，或是其他網站有些網頁的超連結指向舊的域名，因此管理員不打算直接廢棄舊域名，而是將收到的指向舊域名之網頁請求「永久」導向新的域名www.domain2.com下同樣名稱的資源。請問下列哪一項設定可以完成上述要求？", options: ["A. rewrite ^/(.*)1 permanently;", "B. rewrite ^/$ http://www.domain2.com permanent;", "C. rewrite ^/$ http://www.domain2.com permanently;", "D. rewrite ^/(.*)1 permanent;"], ans: ["D"], exp: "" },
+    { id: 53, type: "single", q: "Apache網頁伺服器啟動後，正常情況下會開啟下列哪一項埠號提供無加密的網頁流量？", options: ["A. 53", "B. 25", "C. 80", "D. 110"], ans: ["C"], exp: "" },
+    { id: 54, type: "single", q: "一般在Ubuntu Linux Server上架設VPN服務時，都是安裝OpenVPN套件。請問該套件是使用哪一種VPN堆疊加密方式？", options: ["A. CHAP", "B. SSL/TLS", "C. PPTP", "D. IPSec"], ans: ["B"], exp: "" },
+    { id: 55, type: "single", q: "小花利用公司的Ubuntu Linux Server架設VPN服務，她寫好設定檔server1.conf之後，放置於/etc/openvpn目錄之下。請問她該如何啟動VPN服務？", options: ["A. openvpn connect", "B. systemctl start openvpn@server1", "C. systemctl start openvpn", "D. openvpn start connect"], ans: ["B"], exp: "" },
+    { id: 56, type: "single", q: "下列哪一項是每個DNS正/反解區域檔中只能出現一次的資源紀錄？", options: ["A. NS", "B. MX", "C. SOA", "D. CNAME"], ans: ["C"], exp: "Start Of Authority，這種資源紀錄放在區域檔一開始的地方，每一個區域檔只能有一個 SOA，而且SOA一定是檔案中第一個資源紀錄。" },
+    { id: 57, type: "single", q: "FDDI是藉由光的傳遞，不能讓進出的光彼此干擾，採用下列哪一種網路結構？", options: ["A. 環狀拓樸（Ring Topology）", "B. 星狀拓樸（Star Topology）", "C. 混合式拓樸（Hybird Topology）", "D. 匯流排拓樸（Bus Topology）"], ans: ["A"], exp: "" },
+    { id: 58, type: "single", q: "在Ubuntu Linux Server上架設VPN服務，通常會安裝openvpn以及easy-rsa兩套軟體。請問下列哪一項不是使用easy-rsa軟體的目的？", options: ["A. 製作授權驗證機制，進行Server與Client的電子簽章", "B. 利用產生的key進行登入的身份驗證", "C. 產生兩把key來協助VPN通訊內容的加解密", "D. 利用key來啟動VPN服務"], ans: ["D"], exp: "easy-key可以產生RSA公私金鑰對以及CA電子簽章憑證的金鑰。" },
+    { id: 59, type: "single", q: "編輯Mail Relay檔內容，下列哪一項正確？", options: ["A. 61.62.63.64 Relay", "B. Relay 61.62.63.64", "C. RELAY 61.62.63.64", "D. 61.62.63.64 RELAY"], ans: ["D"], exp: "" },
+    { id: 60, type: "single", q: "下列哪一項指令可以清除目前路由表的快取資訊？", options: ["A. route --clean", "B. route --flush", "C. ip route flush cache", "D. route --no-cache"], ans: ["C"], exp: "" },
+    { id: 61, type: "single", q: "TXT資源紀錄的值可以用來描述寄件者原則架構（Sender Policy Framework, SPF）紀錄，幫助收信網域判斷來信是否為假冒合法網域的垃圾郵件。若SPF TXT紀錄內容最後方的限定詞是~all，且電子郵件的來源IP位址沒有列在SPF紀錄中時，下列敘述哪一項正確？", options: ["A. 郵件可被正常接受", "B. 中立，由接收郵件的伺服器自行決定如何處理所收到的郵件", "C. 郵件可被接受但應標記為垃圾郵件", "D. 郵件應拒收"], ans: ["C"], exp: "" },
+    { id: 62, type: "single", q: "下列哪一個設定檔是BIND（Berkeley Internet Name Domain）的工作環境設定檔？", options: ["A. named.conf", "B. localhost.zone", "C. named.ca", "D. named.local"], ans: ["A"], exp: "" },
+    { id: 63, type: "single", q: "SRV紀錄可為特定的服務（如LDAP等）指定伺服器和連接埠，若一網域內有兩台伺服器AD1和AD2皆提供LDAP服務，且AD1的SRV紀錄裡優先順序值為1、權重值為3，AD2的SRV紀錄裡優先順序為2、權重值為1。若兩台伺服器皆正常運行，關於兩台伺服器服務的連線數量，下列敘述哪一項正確？", options: ["A. AD1服務的連線數量是AD2的一半", "B. 全部都是AD1在服務", "C. AD1服務的連線數量是AD2的3倍", "D. 全部都是AD2在服務"], ans: ["B"], exp: "" },
+    { id: 64, type: "single", q: "下列哪一項是Samba伺服器的分享設定檔？", options: ["A. /etc/smb/smb.conf", "B. /etc/smb/samba.conf", "C. /etc/samba/samba.conf", "D. /etc/samba/smb.conf"], ans: ["D"], exp: "(A)(B)(C)無此檔案。" },
+    { id: 65, type: "single", q: "下列哪一項是屬於封閉迴路，自我測試使用的IP位址？", options: ["A. 127.0.0.1", "B. 172.16.0.255", "C. 10.10.0.1", "D. 192.168.0.0"], ans: ["A"], exp: "" },
+    { id: 66, type: "single", q: "在DHCP伺服器預設組態設定檔中，設定名稱伺服器為tq3，要使用下列哪一個宣告？", options: ["A. option domain-name-servers tq3;", "B. option domain-name tq3;", "C. option routers tq3;", "D. option dhcp-server tq3;"], ans: ["A"], exp: "" },
+    { id: 67, type: "single", q: "如附圖所示，小明在Ubuntu維護紀錄手冊中查到前一任網管所紀錄的NAT設定指令，試問該設定具有下列哪一項的意義？", options: ["A. 凡是經過120.110.100.101的封包均轉至192.168.1.0/24網段", "B. 將192.168.1.0/24這個網段出去所有封包的來源網址轉換為120.110.100.101", "C. 將192.168.1.0/24這個網段的封包均轉向至120.110.100.101", "D. 將192.168.1.0/24這個網段的預設路由設為120.110.100.101"], ans: ["B"], exp: "該指令主要目的是由enp0s3網卡往外傳送（POSTROUTING）的封包進行NAT的來源網址轉換（SNAT）：來自192.168.1.0/24網路封包的來源網更改為120.110.100.101。SNAT通常是在「對外網路為靜態IP Address」的情況下使用，可用於將內部網路的私有IP Address轉換為合法對外的IP Address，以便將封包往Internet傳送。" },
+    { id: 68, type: "single", q: "當用戶端設備要連接網路時，它會發送出請求封包，而網路上的某一種伺服器會分配可用的IP位址和其他配置資訊，並將這些網路資訊一起發送回客戶端，使其能夠正確地配置網路參數。請問上面所說的是下列哪一種網路服務？", options: ["A. SSH", "B. RCP", "C. DHCP", "D. DNS"], ans: ["C"], exp: "" },
+    { id: 69, type: "single", q: "負責管理特定頂級域（如 .com或 .org）下所有域名的機構或公司，稱為下列哪一項？", options: ["A. 網域註冊機構", "B. DNS伺服器", "C. 域名註冊商", "D. 網域代理人"], ans: ["A"], exp: "" },
+    { id: 70, type: "single", q: "下列哪一個IP是屬於Class C範圍的IP？", options: ["A. 192.168.122.1", "B. 127.0.0.1", "C. 230.95.1.11", "D. 168.117.10.68"], ans: ["A"], exp: "" },
+    { id: 71, type: "single", q: "mail logs位在下列哪一個目錄底下？", options: ["A. /var/log", "B. /log", "C. /var/adm/syslogs", "D. /logs"], ans: ["A"], exp: "" },
+    { id: 72, type: "single", q: "下列哪一個資料夾用於當作Sendmail的佇列存放mail的相關資料？", options: ["A. /var/spool/mail", "B. /var/spool/mailq", "C. /var/spool/sendmail", "D. /var/spool/mqueue"], ans: ["D"], exp: "" },
+    { id: 73, type: "single", q: "下列哪一個檔案為NFS伺服器分享目錄的設定檔？", options: ["A. /proc/filesystem", "B. /etc/export", "C. /usr/share/nfs", "D. /etc/exports"], ans: ["D"], exp: "" },
+    { id: 74, type: "single", q: "下列哪一個郵件協定允許使用者在伺服器上管理郵件，而不需要完全下載？", options: ["A. POP3", "B. IMAP", "C. SMTP", "D. SNMP"], ans: ["B"], exp: "" },
+    { id: 75, type: "single", q: "在某區域網路中所有電腦都連接到一台交換器（switch），這是下列哪一種網路結構？", options: ["A. 匯流排拓樸（Bus Topology）", "B. 星狀拓樸（Star Topology）", "C. 混合式拓樸（Hybird Topology）", "D. 環狀拓樸（Ring Topology）"], ans: ["B"], exp: "" },
+    { id: 76, type: "single", q: "小明接受到指令，要求在Ubuntu Linux Server上建立一個網頁用目錄/helloworld來放置公司的網站。請問他應該要指定這個目錄的SELinux脈胳規則（Context）為下列哪一種類型屬性？", options: ["A. httpd_sys_rw_content_t", "B. httpd_sys_ro_content_t", "C. httpd_sys_content_t", "D. httpd_content_t"], ans: ["C"], exp: "" },
+    { id: 77, type: "single", q: "小花接到MIS部門的求救電話，MIS表示他們將網站的連線埠改至8191埠，防火牆也配合設定更改埠號，但無法啟動服務，原因是8191埠出現「Permission Denied」字樣。請問，小花可用下列哪一個指令進行處理？", options: ["A. semanage boolean -a http_port_t 8191", "B. semanage port -a -t http_port_t -p tcp 8191", "C. semanage fcontext -a -t http_sys_port_t -p 8191", "D. semanage port -a http_sys_port_t -p 8191"], ans: ["B"], exp: "httpd服務通訊埠需要使用http_port_t類型的SELinux屬性值。" },
+    { id: 78, type: "single", q: "小花現在正在設定Ubuntu Linux上的網頁檔案，但該檔案只是暫時放置的檔案，小花可以利用下列哪一個指令，進行臨時的SELinux檔案的脈絡規則設定？", options: ["A. audit2allow", "B. semanage fcontext", "C. restorecon", "D. chcon"], ans: ["D"], exp: "使用chcon可臨時修改SELinux的檔案脈絡規則屬性。" },
+    { id: 79, type: "single", q: "如附圖所示，成功登入Samba伺服器分享目錄，出現如附圖命令列，請問下列哪一項不是登入後可以使用的指令？", options: ["A. get", "B. cp", "C. ?", "D. mget"], ans: ["B"], exp: "" },
+    { id: 80, type: "multiple", q: "小明是公司的Ubuntu Linux管理員。他現在想要在Ubuntu Linux上安裝SELinux以強化系統安全，請問他可以安裝下列哪些套件？", options: ["A. policycoreutils", "B. selinux", "C. selinux-basics", "D. selinux-utils"], ans: ["A", "C", "D"], exp: "" },
+    { id: 81, type: "multiple", q: "在Squid設定檔內，如果允許內部網路10.0.0.0/8網段使用HTTP代理服務，請問下列哪些設定項目正確？(複選題)", options: ["A. acl my_localnet src 10.0.0.0/8", "B. http_access allow localnet", "C. http_access allow my_localnet", "D. acl localnet dst 10.0.0.0/8"], ans: ["A", "C"], exp: "" },
+    { id: 82, type: "single", q: "可使用下列哪一個指令來測試DNS伺服器？", options: ["A. bind", "B. ping", "C. nslookup", "D. dns"], ans: ["C"], exp: "" },
+    { id: 83, type: "single", q: "指令nslookup所詢問的名稱伺服器若無回應，nslookup預設會詢問3次，每次等待5秒，因此總共花費15秒後放棄。如果希望它的行為變成詢問2次，每次等待1秒，總共花費2秒後放棄，請問下列哪一個指令可以正確達到此要求（假設要查詢example.com的IP位址）？", options: ["A. nslookup -retry=1 -timeout=1 example.com", "B. nslookup -retry=2 -timeout=1 example.com", "C. nslookup -r=1 -t=1 example.com", "D. nslookup -r=2 -t=1 example.com"], ans: ["B"], exp: "符合此要求的option是retry和timeout。不過，雖然retry的中文是「再」嘗試，給人一種已經試過一次現在要再試一次的感覺，但這裡實際上retry是要試幾次的意思。然而當-retry=0時，nslookup確實有嘗試一次詢問，而非完全不試。" },
+    { id: 84, type: "single", q: "NFS伺服器的用途為下列哪一項？", options: ["A. 檔案分享給Linux用戶", "B. Linux的時間伺服器", "C. 檔案分享給Windows用戶", "D. 動態分配IP的伺服器"], ans: ["A"], exp: "" },
+    { id: 85, type: "single", q: "如果Linux系統/etc/passwd中沒有lin帳號，而要新增名為lin的Samba帳號，下列敘述哪一項正確？", options: ["A. 新增成功，但無法登入Samba伺服器", "B. 新增成功，但無法設定帳號密碼", "C. Samba的帳號與Linux系統帳號無關，可以新增", "D. 新增命令回應無法新增"], ans: ["D"], exp: "" },
+    { id: 86, type: "single", q: "用戶端向DHCP伺服器成功取得IP資訊後，執行下列哪一個命令可以釋放已取得的IP？", options: ["A. dhclient -r", "B. dhclient -d", "C. dhclient", "D. dhclient -s"], ans: ["A"], exp: "(A)從DHCP伺服器取得IP。(C)-s server-addr指定DHCP伺服器取得IP。(D)-d以前台方式執行。" },
+    { id: 87, type: "single", q: "xinetd可視為強化版inetd的一套網管工具，具備較多的功能參數、較高的安全控管與使用彈性。若要啟用xinetd控管的各類網路服務，則必須編修/etc/xinetd.d組態目錄下的參數檔案，請問哪一項參數是必要的？", options: ["A. disable=no", "B. wait=yes", "C. wait=no", "D. disable=yes"], ans: ["A"], exp: "" },
+    { id: 88, type: "multiple", q: "Samba分享資源，要設定網段192.168.11.0/24都可以登入使用，下列哪些設定正確？", options: ["A. hosts allow = 192.168.11", "B. hosts allow = 192.168.11.", "C. hosts allow = 192.168.11.0/24", "D. hosts allow = 192.168.11.0/255.255.255.0"], ans: ["B", "C", "D"], exp: "" },
+    { id: 89, type: "single", q: ".htaccess檔案可以改變Apache的某些設定，例如：驗證身分後才可以讀取資源、網址改寫、自定義錯誤頁面等。關於.htaccess檔案的特性，下列敘述哪一項錯誤？", options: ["A. 可能不需要root權限便可以修改.htaccess檔案", "B. 相對於修改Apache的設定檔，使用.htaccess檔案可以讓系統的效能提升", "C. .htaccess檔案修改後，無須重啟Apache便可生效", "D. Apache預設未啟用.htaccess檔案"], ans: ["B"], exp: "" },
+    { id: 90, type: "single", q: "關於反解區域檔的功能，下列敘述哪一項正確？", options: ["A. 將IP位址對應到NetBIOS的主機名稱", "B. 將NetBIOS的主機名稱對應到IP位址", "C. 將主機名稱對應到IP位址", "D. 將IP位址對應到主機名稱"], ans: ["D"], exp: "反解區域檔（Reverse Zone File）主要用於將IP地址解析為對應的主機名稱。這通常是通過使用「PTR」記錄來實現的。" },
+    { id: 91, type: "single", q: "如附圖所示，是網頁瀏覽器跟Nginx請求一個不存在的網頁檔案時所看到的錯誤畫面，其中的訊息洩漏了Nginx的版本是1.18.0，且其下的作業系統是Ubuntu。如想隱藏此Nginx的版本和作業系統的名稱，可以在/etc/nginx/nginx.conf檔案中進行設定，請問下列哪一項設定可以完成上述要求？", options: ["A. ServerSignature Off;", "B. ServerSignatures Off;", "C. server_token off;", "D. server_tokens off;"], ans: ["D"], exp: "" },
+    { id: 92, type: "single", q: "用戶端指定向DHCP伺服器tqc1要求IP資訊，可以使用下列哪一個命令？", options: ["A. dhclient -s tqc1", "B. dhclient -d tqc1", "C. dhclient -r tqc1", "D. dhclient -p tqc1"], ans: ["A"], exp: "" },
+    { id: 93, type: "multiple", q: "NFS伺服器的分享設定檔中，下列哪些設定正確？", options: ["A. /home/joe pc001(rw,all_squash,anonuid=150,anongid=100)", "B. /build buildhost[0-9].local.domain(rw)", "C. /usr *.local.domain(ro) @trusted(rw)", "D. / master(rw) trusty(rw,no_root_squash)"], ans: ["A", "B", "C", "D"], exp: "" },
+    { id: 94, type: "single", q: "Linux用戶端要掛載Samba伺服器分享資源，要安裝下列哪一個套件？", options: ["A. dosfstools", "B. cifs-tools", "C. dosfs-utils", "D. cifs-utils"], ans: ["D"], exp: "(B)(C)無此套件。(C)dosfstools格式化MS-DOS FAT的工具。" },
+    { id: 95, type: "multiple", q: "關於scp的敘述，下列哪些正確？", options: ["A. scp跟ftp一樣，是透過port 21進行遠端連線", "B. scp可以利用-4參數指定雙方使用IPv4建立連線", "C. scp可以利用-B參數選擇批次模式", "D. scp是基於ssh的一種跨機器的遠端檔案拷貝工具程式"], ans: ["B", "C", "D"], exp: "" },
+    { id: 96, type: "multiple", q: "郵件系統必須由下列哪些項目組成？", options: ["A. MTA", "B. MDA", "C. MBA", "D. MUA"], ans: ["A", "B", "D"], exp: "" },
+    { id: 97, type: "single", q: "下列哪一個套件可以使Nginx支援即時訊息協定（Real-Time Messaging Protocol, RTMP）的串流？", options: ["A. nginx-rtmp", "B. libnginx-mod-rtmp", "C. rtmp", "D. nginx-mod-rtmp"], ans: ["B"], exp: "" },
+    { id: 98, type: "single", q: "下列哪一個NFS版本，可以不需要rpcbind服務，只啟動NFS服務？", options: ["A. 1", "B. 2", "C. 4", "D. 3"], ans: ["C"], exp: "" },
+    { id: 99, type: "multiple", q: "想要利用Network Manager內建的工具程式nmcli來查看目前網路連線狀態，請問下列敘述哪些正確？(複選題)", options: ["A. \"nmcli e\"", "B. \"nmcli d\"", "C. \"nmcli f\"", "D. \"nmcli c\""], ans: ["B", "D"], exp: "" },
+    { id: 100, type: "single", q: "一般而言，下列哪一個設定檔是BIND（Berkeley Internet Name Domain）的根網域記錄檔？", options: ["A. localhost.zone", "B. named.ca", "C. named.conf", "D. named.local"], ans: ["B"], exp: "" }
 ];
 
-let examCount = 0;
-let historyRecords = [];
-
-// 初始化題目
-function renderQuiz() {
-    const container = document.getElementById("questionsContainer");
-    let html = "";
+// 初始化畫面載入題目
+function loadQuiz() {
+    const form = document.getElementById('quiz-form');
+    let html = '';
     quizData.forEach((item, index) => {
-        html += `<div class="question-card">
-            <div class="question-title">Q${index + 1}. ${item.q}</div>
-            <div class="options">`;
-        
-        if (item.type === "radio") {
-            for (let key in item.options) {
-                html += `<label><input type="radio" name="q${index}" value="${key}"> ${key}. ${item.options[key]}</label>`;
-            }
-        } else if (item.type === "checkbox") {
-            for (let key in item.options) {
-                html += `<label><input type="checkbox" name="q${index}" value="${key}"> ${key}. ${item.options[key]}</label>`;
-            }
-        } else if (item.type === "text") {
-            html += `<input type="text" name="q${index}" placeholder="請輸入答案...">`;
-        }
-        
-        html += `</div></div>`;
+        const inputType = item.type === 'multiple' ? 'checkbox' : 'radio';
+        let optionsHtml = '';
+        item.options.forEach(opt => {
+            const optLetter = opt.charAt(0);
+            optionsHtml += `
+                <label>
+                    <input type="${inputType}" name="q${item.id}" value="${optLetter}">
+                    ${opt}
+                </label>
+            `;
+        });
+
+        html += `
+            <div class="question" id="q-box-${item.id}">
+                <div class="question-title">${item.id}. ${item.q} (${item.type === 'multiple' ? '複選題' : '單選題'})</div>
+                <div class="options">${optionsHtml}</div>
+                <div id="result-${item.id}"></div>
+            </div>
+        `;
     });
-    container.innerHTML = html;
+    form.innerHTML = html;
 }
 
-// 提交並計分
+// 切換頁籤
+function switchTab(tabName) {
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+
+    if (tabName === 'quiz') {
+        document.querySelector('.nav-tabs button:nth-child(1)').classList.add('active');
+        document.getElementById('quiz-section').classList.add('active');
+    } else {
+        document.querySelector('.nav-tabs button:nth-child(2)').classList.add('active');
+        document.getElementById('history-section').classList.add('active');
+        renderHistory();
+    }
+}
+
+// 提交測驗與批改
 function submitQuiz() {
-    examCount++;
     let score = 0;
-    let total = quizData.length;
-    let detailsHtml = "";
+    let totalQuestions = quizData.length;
 
-    quizData.forEach((item, index) => {
-        let userAns = [];
-        if (item.type === "radio") {
-            let selected = document.querySelector(`input[name="q${index}"]:checked`);
-            if (selected) userAns.push(selected.value);
-        } else if (item.type === "checkbox") {
-            let selected = document.querySelectorAll(`input[name="q${index}"]:checked`);
-            selected.forEach(el => userAns.push(el.value));
-            userAns.sort();
-        } else if (item.type === "text") {
-            let val = document.querySelector(`input[name="q${index}"]`).value.trim();
-            userAns = val;
-        }
-
-        let correctAns = item.answer;
-        let isCorrect = false;
-
-        if (item.type === "checkbox") {
-            // 複選只要錯1個就是全錯 (比對陣列是否完全相符)
-            if (JSON.stringify(userAns) === JSON.stringify([...correctAns].sort())) {
-                isCorrect = true;
-            }
-        } else if (item.type === "text") {
-            if (userAns === correctAns) {
-                isCorrect = true;
-            }
-        } else {
-            if (userAns.length === 1 && userAns[0] === correctAns[0]) {
-                isCorrect = true;
-            }
-        }
-
-        if (isCorrect) score++;
-
-        // 整理詳情
-        let userAnsStr = Array.isArray(userAns) ? userAns.join(" ") : (userAns || "(未作答)");
-        let correctAnsStr = Array.isArray(correctAns) ? correctAns.join(" ") : correctAns;
+    quizData.forEach(item => {
+        const qBox = document.getElementById(`q-box-${item.id}`);
+        const resultDiv = document.getElementById(`result-${item.id}`);
+        const inputs = document.querySelectorAll(`input[name="q${item.id}"]:checked`);
         
-        detailsHtml += `<div>Q${index + 1}: ${isCorrect ? '<span class="correct">正確</span>' : '<span class="wrong">錯誤</span>'} 
-            | 你的答案: ${userAnsStr} | 正確答案: <span class="correct">${correctAnsStr}</span></div>`;
+        let userAns = Array.from(inputs).map(input => input.value).sort();
+        let correctAns = [...item.ans].sort();
+
+        // 判斷對錯
+        let isCorrect = (userAns.length === correctAns.length) && userAns.every((val, index) => val === correctAns[index]);
+
+        qBox.className = "question " + (isCorrect ? "correct" : "incorrect");
+
+        if (isCorrect) {
+            score += 0.3; // 每題 0.3 分
+            resultDiv.innerHTML = `<div class="feedback correct-msg">回答正確！</div>`;
+        } else {
+            let expText = item.exp ? `<br>答案解釋：${item.exp}` : '';
+            resultDiv.innerHTML = `
+                <div class="feedback incorrect-msg">
+                    回答錯誤！您的作答：${userAns.join(' ') || '未作答'}<br>
+                    <strong>正確答案：${correctAns.join(' ')}</strong>
+                    ${expText}
+                </div>
+            `;
+        }
     });
 
-    let resultMsg = `第 ${examCount} 次考試結果：得分 ${score} / ${total} 分 (正確率: ${((score/total)*100).toFixed(1)}%)`;
-    
-    // 顯示當次結果
-    let currentResultBox = document.getElementById("currentResult");
-    currentResultBox.style.display = "block";
-    currentResultBox.innerHTML = `<h3>${resultMsg}</h3><div class="ans-explain">${detailsHtml}</div>`;
+    // 顯示總分面板（總分計到小數點後一位，滿分30分）
+    const finalScore = (score).toFixed(1);
+    const scorePanel = document.getElementById('score-panel');
+    scorePanel.style.display = 'block';
+    scorePanel.innerHTML = `測驗完成！您的得分：${finalScore} 分 (滿分 30.0 分)`;
 
     // 儲存至歷史紀錄
-    historyRecords.unshift({
-        title: `第 ${examCount} 次考試`,
-        score: `${score} / ${total}`,
-        details: detailsHtml
-    });
+    saveHistory(finalScore);
 
-    renderHistory();
+    // 滾動到最上方看成績
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-function renderHistory() {
-    const historyContainer = document.getElementById("historyContainer");
-    let html = "";
-    historyRecords.forEach(rec => {
-        html += `<div class="history-item">
-            <strong>${rec.title}</strong> - 得分: ${rec.score}
-            <div class="ans-explain" style="max-height: 150px; overflow-y: auto; margin-top: 5px;">${rec.details}</div>
-        </div>`;
-    });
-    historyContainer.innerHTML = html;
+// 儲存歷史紀錄至 localStorage
+function saveHistory(score) {
+    let history = JSON.parse(localStorage.getItem('quiz_history')) || [];
+    const now = new Date();
+    const timeStr = now.toLocaleString();
+    history.unshift({ time: timeStr, score: score });
+    localStorage.setItem('quiz_history', JSON.stringify(history));
 }
 
-// 頁面載入時初始化
-window.onload = renderQuiz;
+// 渲染歷史紀錄
+function renderHistory() {
+    const historyContent = document.getElementById('history-content');
+    let history = JSON.parse(localStorage.getItem('quiz_history')) || [];
+
+    if (history.length === 0) {
+        historyContent.innerHTML = '<p style="text-align:center; color:#777;">目前尚無測驗紀錄。</p>';
+        return;
+    }
+
+    let html = `
+        <table class="history-table">
+            <thead>
+                <tr>
+                    <th>項次</th>
+                    <th>交卷時間</th>
+                    <th>得分</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+    history.forEach((record, index) => {
+        html += `
+            <tr>
+                <td>${index + 1}</td>
+                <td>${record.time}</td>
+                <td>${record.score} / 30.0 分</td>
+            </tr>
+        `;
+    });
+
+    html += `</tbody></table>`;
+    historyContent.innerHTML = html;
+}
+
+// 清除歷史紀錄
+function clearHistory() {
+    if (confirm('確定要清除所有歷史紀錄嗎？')) {
+        localStorage.removeItem('quiz_history');
+        renderHistory();
+    }
+}
+
+// 初始化執行
+window.onload = loadQuiz;
 </script>
 
 </body>
